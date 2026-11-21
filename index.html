@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillBridge Live — Interactive Learning & Skill Marketplace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Telugu:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Kannada:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans Telugu', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Kannada', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+  <!-- Non-blocking Toast Container -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full px-3 sm:px-0 pointer-events-none"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-2">
+        <!-- Brand Logo & Tagline -->
+        <div class="flex items-center gap-2.5 min-w-0">
+          <button onclick="switchTab('overview')" class="flex items-center gap-2.5 text-left focus:outline-none">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white font-bold shadow-xs shrink-0">
+              SB
+            </div>
+            <div class="truncate">
+              <span id="ui-brand-name" class="font-bold text-base sm:text-lg tracking-tight text-slate-900">SkillBridge Live</span>
+              <span class="hidden md:inline-block ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">₹49–₹199 Seats</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Right Quick Controls: Language, Streak, Wallet, AI Study Assistant -->
+        <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <div class="relative">
+            <label for="lang-select" class="sr-only">Language</label>
+            <select id="lang-select" onchange="changeLanguage(this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200/80 text-slate-800 text-xs sm:text-sm font-medium rounded-xl pl-2.5 pr-7 py-2 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+              <option value="en">🌐 English</option>
+              <option value="hi">🌐 हिन्दी (Hindi)</option>
+              <option value="te">🌐 తెలుగు (Telugu)</option>
+              <option value="ta">🌐 தமிழ் (Tamil)</option>
+              <option value="kn">🌐 ಕನ್ನಡ (Kannada)</option>
+            </select>
+            <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs">▾</span>
+          </div>
+
+          <button onclick="switchTab('progress')" title="Learning Streak" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 text-xs font-semibold transition">
+            <span>🔥</span>
+            <span id="header-streak-count">12d</span>
+          </button>
+
+          <button onclick="openWalletModal()" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs sm:text-sm font-semibold transition">
+            <span>👛</span>
+            <span id="header-wallet-balance">₹1,450</span>
+          </button>
+
+          <button onclick="toggleAssistantDrawer(true)" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-xs transition">
+            <span>✨</span>
+            <span id="ui-ai-btn" class="hidden md:inline">AI Study Assistant</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Primary Navigation Tabs -->
+      <nav id="primary-nav" class="flex items-center gap-1.5 py-2 overflow-x-auto no-scrollbar border-t border-slate-100" aria-label="Primary Sections">
+        <button data-tab="overview" onclick="switchTab('overview')" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition">📊 Overview & SkillGap</button>
+        <button data-tab="marketplace" onclick="switchTab('marketplace')" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition">🎓 Live Classes & Demos</button>
+        <button data-tab="trainers" onclick="switchTab('trainers')" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition">⚖️ Compare Trainers</button>
+        <button data-tab="timetable" onclick="switchTab('timetable')" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition">🗓️ Schedule</button>
+        <button data-tab="doubts" onclick="switchTab('doubts')" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition">💬 Doubt Q&A & Notes</button>
+        <button data-tab="progress" onclick="switchTab('progress')" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition">🚀 Roadmap & Progress</button>
+        <button data-tab="community" onclick="switchTab('community')" class="nav-tab px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition">🤝 Offline, Peers & Swap</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6 space-y-8">
+    <!-- Top Summary Strip -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex items-center justify-between">
+        <div class="min-w-0">
+          <p id="kpi-goal-label" class="text-xs font-medium text-slate-500">Target Career Goal</p>
+          <p id="kpi-goal-val" class="text-sm sm:text-base font-bold text-slate-900 mt-0.5 truncate">Full-Stack AI Engineer</p>
+          <p id="kpi-gap-sub" class="text-xs text-indigo-600 font-medium mt-1">3 skill gap(s) identified</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg shrink-0">🎯</div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex items-center justify-between">
+        <div class="min-w-0">
+          <p id="kpi-seats-label" class="text-xs font-medium text-slate-500">Booked Live Seats</p>
+          <p id="kpi-booked-count" class="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">1 Class</p>
+          <p class="text-xs text-emerald-600 font-medium mt-1">Seats ₹49 – ₹199</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0">🎟️</div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex items-center justify-between">
+        <div class="min-w-0">
+          <p id="kpi-streak-label" class="text-xs font-medium text-slate-500">Learning Streak</p>
+          <p id="kpi-streak-days" class="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">12 Days</p>
+          <p id="kpi-streak-milestone" class="text-xs text-amber-600 font-medium mt-1">Next: 2d to 14-Day Badge</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg shrink-0">🔥</div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex items-center justify-between">
+        <div class="min-w-0">
+          <p id="kpi-roadmap-label" class="text-xs font-medium text-slate-500">Roadmap Mastery</p>
+          <p id="kpi-roadmap-pct" class="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">40%</p>
+          <p id="kpi-projects-sub" class="text-xs text-violet-600 font-medium mt-1">1/3 Projects Completed</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center text-lg shrink-0">📈</div>
+      </div>
+    </section>
+
+    <!-- TAB 1: OVERVIEW & AI SKILLGAP ANALYSIS -->
+    <section id="tab-overview" class="tab-panel space-y-6 animate-fade-up">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-2xs">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-5 border-b border-slate-100">
+          <div>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+              ✨ AI SkillGap Analysis
+            </span>
+            <h1 id="skillgap-heading" class="text-xl sm:text-2xl font-bold text-slate-900 mt-2">Identify Missing Skills Based on Your Goal</h1>
+            <p id="skillgap-desc" class="text-sm text-slate-600 mt-1">Select your target role and adjust your current skill levels to calculate exact skill gaps and generate a tailored roadmap.</p>
+          </div>
+          <div class="w-full lg:w-80">
+            <label for="goal-select" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Career Goal</label>
+            <select id="goal-select" onchange="onGoalChange(this.value)" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="fullstack-ai">Full-Stack AI Engineer</option>
+              <option value="data-analyst">Product Data & SQL Analyst</option>
+              <option value="frontend-ui">Modern Frontend & UI Engineer</option>
+              <option value="cloud-devops">Cloud & Backend Microservices Dev</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-6">
+          <div class="lg:col-span-7 space-y-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-base font-bold text-slate-800">Current vs. Required Skill Proficiency</h2>
+              <button onclick="recalculateSkillGap(true)" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition">
+                Recalculate Gap
+              </button>
+            </div>
+            <div id="skill-gap-list" class="space-y-4"></div>
+          </div>
+
+          <div class="lg:col-span-5 bg-slate-50 rounded-2xl p-5 border border-slate-200/80 flex flex-col justify-between space-y-5">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">AI Gap Diagnosis</h3>
+              <p id="gap-diagnosis-summary" class="text-sm text-slate-600 mt-1.5 leading-relaxed"></p>
+
+              <div class="mt-4 space-y-2.5">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Priority Missing Skills</p>
+                <div id="missing-skills-badges" class="flex flex-wrap gap-2"></div>
+              </div>
+
+              <div class="mt-5 p-3.5 rounded-xl bg-white border border-indigo-100">
+                <p class="text-xs font-semibold text-indigo-700">Recommended Next Step</p>
+                <p id="recommended-action-text" class="text-sm font-medium text-slate-800 mt-1"></p>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2.5 pt-2">
+              <button onclick="switchTab('progress')" class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold text-center transition">
+                View AI Roadmap →
+              </button>
+              <button onclick="switchTab('marketplace')" class="flex-1 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 text-sm font-semibold text-center transition">
+                Browse ₹49+ Classes
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-900 text-base">🔥 Live & Demo Seats (₹0 – ₹199)</h3>
+            <button onclick="switchTab('marketplace')" class="text-xs font-semibold text-indigo-600 hover:underline">All Classes →</button>
+          </div>
+          <div id="overview-classes-preview" class="space-y-3"></div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-900 text-base">🗺️ Active Roadmap Milestones</h3>
+            <button onclick="switchTab('progress')" class="text-xs font-semibold text-indigo-600 hover:underline">Full Roadmap →</button>
+          </div>
+          <div id="overview-roadmap-preview" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: LIVE CLASS MARKETPLACE, SEAT BOOKING, DEMO CLASSES & CLASS REVIEWS -->
+    <section id="tab-marketplace" class="tab-panel hidden space-y-6 animate-fade-up">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Cohort Size: 10–30 Learners • Seats ₹49–₹199 & Free Demos
+            </span>
+            <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-2">Live Class Marketplace & Free Demos</h2>
+            <p class="text-sm text-slate-600 mt-1">Join small interactive live cohorts, preview free trainer demos, or book an affordable seat from your Learning Wallet.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="class-topic-filter" onchange="renderMarketplace()" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="all">All Topics</option>
+              <option value="AI & LLM">AI & LLM</option>
+              <option value="SQL & Data">SQL & Data</option>
+              <option value="React & UI">React & UI</option>
+              <option value="System Design">System Design</option>
+            </select>
+
+            <select id="class-price-filter" onchange="renderMarketplace()" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="all">All Prices (Free & ₹49–₹199)</option>
+              <option value="free">Free Demos (₹0)</option>
+              <option value="under100">Under ₹100 (₹49–₹99)</option>
+              <option value="100plus">₹100 – ₹199</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="live-classes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6"></div>
+      </div>
+
+      <!-- Class Reviews & Structured Feedback -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-5 space-y-4">
+            <div>
+              <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">Structured Feedback</span>
+              <h3 class="text-lg font-bold text-slate-900 mt-2">Rate a Trainer & Share Feedback</h3>
+              <p class="text-xs sm:text-sm text-slate-600 mt-1">Select a class/trainer, rate 1–5 stars, choose structured tags, and submit your review.</p>
+            </div>
+
+            <form id="review-form" onsubmit="submitReview(event)" class="space-y-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Class & Trainer</label>
+                <select id="review-class-select" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Star Rating</label>
+                <div id="star-rating-picker" class="flex items-center gap-1.5">
+                  <button type="button" data-rating="1" onclick="setReviewRating(1)" class="star-btn text-2xl text-amber-400 focus:outline-none">★</button>
+                  <button type="button" data-rating="2" onclick="setReviewRating(2)" class="star-btn text-2xl text-amber-400 focus:outline-none">★</button>
+                  <button type="button" data-rating="3" onclick="setReviewRating(3)" class="star-btn text-2xl text-amber-400 focus:outline-none">★</button>
+                  <button type="button" data-rating="4" onclick="setReviewRating(4)" class="star-btn text-2xl text-amber-400 focus:outline-none">★</button>
+                  <button type="button" data-rating="5" onclick="setReviewRating(5)" class="star-btn text-2xl text-amber-400 focus:outline-none">★</button>
+                  <span id="review-rating-label" class="ml-2 text-xs font-semibold text-slate-600">5.0 / 5.0</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Structured Feedback Tags</label>
+                <div id="feedback-tags-container" class="flex flex-wrap gap-1.5">
+                  <button type="button" data-tag="High Clarity" onclick="toggleFeedbackTag(this)" class="feedback-tag px-2.5 py-1 rounded-lg text-xs font-medium border border-indigo-600 bg-indigo-600 text-white transition">High Clarity</button>
+                  <button type="button" data-tag="Great Pacing" onclick="toggleFeedbackTag(this)" class="feedback-tag px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-300 bg-white text-slate-700 transition">Great Pacing</button>
+                  <button type="button" data-tag="Hands-on Practical" onclick="toggleFeedbackTag(this)" class="feedback-tag px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-300 bg-white text-slate-700 transition">Hands-on Practical</button>
+                  <button type="button" data-tag="Doubt Friendly" onclick="toggleFeedbackTag(this)" class="feedback-tag px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-300 bg-white text-slate-700 transition">Doubt Friendly</button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Written Review</label>
+                <textarea id="review-comment" rows="2" required placeholder="How clear were the explanations and exercises?" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+              </div>
+
+              <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition">
+                Submit Class Review
+              </button>
+            </form>
+          </div>
+
+          <div class="lg:col-span-7">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-bold text-slate-900">Verified Learner Reviews</h3>
+              <span id="reviews-count-badge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700"></span>
+            </div>
+            <div id="reviews-list" class="space-y-3 max-h-[460px] overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: TRAINER COMPARISON -->
+    <section id="tab-trainers" class="tab-panel hidden space-y-6 animate-fade-up">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-5 border-b border-slate-100">
+          <div>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+              Side-by-Side Comparison
+            </span>
+            <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mt-2">Compare Trainers by Experience, Rating, Style & Price</h2>
+            <p class="text-sm text-slate-600 mt-1">Filter or sort mentors to pick the teaching style that matches your learning pace and budget.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="trainer-style-filter" onchange="renderTrainerComparison()" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="all">All Teaching Styles</option>
+              <option value="Project-First">Project-First</option>
+              <option value="Concept & Visual">Concept & Visual</option>
+              <option value="Code-Along Live">Code-Along Live</option>
+            </select>
+
+            <select id="trainer-sort" onchange="renderTrainerComparison()" class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="rating">Sort: Highest Rating</option>
+              <option value="experience">Sort: Most Experience</option>
+              <option value="price-low">Sort: Seat Price (Low → High)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="trainer-cards-grid" class="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6"></div>
+
+        <div class="mt-8 overflow-x-auto rounded-2xl border border-slate-200">
+          <table class="w-full text-left border-collapse min-w-[640px]">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-600">
+                <th class="py-3.5 px-4">Trainer</th>
+                <th class="py-3.5 px-4">Experience</th>
+                <th class="py-3.5 px-4">Rating</th>
+                <th class="py-3.5 px-4">Teaching Style</th>
+                <th class="py-3.5 px-4">Languages</th>
+                <th class="py-3.5 px-4">Seat Price</th>
+                <th class="py-3.5 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="trainer-table-body" class="divide-y divide-slate-100 text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: SMART TIMETABLE & CLASS RECORDINGS -->
+    <section id="tab-timetable" class="tab-panel hidden space-y-6 animate-fade-up">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100">
+          <div>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+              Smart Schedule & Reminders
+            </span>
+            <h2 class="text-xl font-bold text-slate-900 mt-1.5">Upcoming Classes & Smart Timetable</h2>
+            <p class="text-sm text-slate-600">Toggle reminders and jump straight into booked sessions.</p>
+          </div>
+          <span id="timetable-summary-badge" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 self-start sm:self-auto"></span>
+        </div>
+
+        <div id="timetable-list" class="mt-5 space-y-3"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs">
+        <div class="pb-4 border-b border-slate-100">
+          <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+            Trainer Permission Controlled
+          </span>
+          <h2 class="text-xl font-bold text-slate-900 mt-1.5">Class Recordings Vault</h2>
+          <p class="text-sm text-slate-600">Watch permitted session recordings or see when a trainer has restricted playback.</p>
+        </div>
+
+        <div id="recordings-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5"></div>
+      </div>
+    </section>
+
+    <!-- TAB 5: INSTANT DOUBT SOLVING & NOTES / RESOURCES -->
+    <section id="tab-doubts" class="tab-panel hidden space-y-6 animate-fade-up">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-5">
+          <div>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+              Live & Post-Class Q&A
+            </span>
+            <h2 class="text-xl font-bold text-slate-900 mt-1.5">Instant Doubt Solving Thread</h2>
+            <p class="text-sm text-slate-600">Ask a question during or after class and get instant trainer or peer answers.</p>
+          </div>
+
+          <form id="doubt-form" onsubmit="postDoubt(event)" class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Related Class</label>
+                <select id="doubt-class-select" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Context</label>
+                <select id="doubt-timing-select" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="During Live Class">During Live Class</option>
+                  <option value="Post-Class Practice">Post-Class Practice</option>
+                  <option value="Recording Review">Recording Review</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Your Question / Doubt</label>
+              <textarea id="doubt-input" rows="2" required placeholder="e.g., When should I chunk documents before generating embeddings for RAG?" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            </div>
+            <div class="flex justify-end">
+              <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition">
+                Post Doubt & Get Answer
+              </button>
+            </div>
+          </form>
+
+          <div id="doubts-thread-list" class="space-y-3.5"></div>
+        </div>
+
+        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-5">
+          <div>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+              Personal Workspace
+            </span>
+            <h2 class="text-xl font-bold text-slate-900 mt-1.5">Notes & Learning Resources</h2>
+            <p class="text-sm text-slate-600">Jot down key takeaways, save study links/files, and download your personal note bundle.</p>
+          </div>
+
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label for="personal-notes-pad" class="text-xs font-semibold uppercase tracking-wider text-slate-600">My Session Notes</label>
+              <span id="notes-saved-status" class="text-xs text-emerald-600 font-medium">Saved</span>
+            </div>
+            <textarea id="personal-notes-pad" rows="6" oninput="handleNoteInput(this.value)" placeholder="Write your key takeaways, commands, or SQL snippets..." class="w-full rounded-xl border border-slate-300 bg-amber-50/40 p-3.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="saveNotesNow()" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">Save Notes</button>
+              <button onclick="downloadNotesFile()" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition">⬇ Download .TXT</button>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 space-y-3">
+            <h3 class="text-sm font-bold text-slate-900">Add Resource / Reference Link</h3>
+            <form onsubmit="addResourceItem(event)" class="flex flex-col sm:flex-row gap-2">
+              <input id="resource-title-input" type="text" required placeholder="Resource title (e.g., RAG Cheatsheet)" class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <select id="resource-type-input" class="rounded-xl border border-slate-300 bg-slate-50 px-2.5 py-2 text-xs font-semibold text-slate-700">
+                <option value="PDF Guide">PDF Guide</option>
+                <option value="Code Repo">Code Repo</option>
+                <option value="Cheatsheet">Cheatsheet</option>
+              </select>
+              <button type="submit" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">Add</button>
+            </form>
+
+            <div id="resources-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: PERSONALISED LEARNING PATH, LEARNING STREAKS & PROGRESS DASHBOARD -->
+    <section id="tab-progress" class="tab-panel hidden space-y-6 animate-fade-up">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                AI Step-by-Step Roadmap
+              </span>
+              <h2 class="text-xl font-bold text-slate-900 mt-1.5">Personalised Learning Path</h2>
+              <p id="roadmap-goal-subtitle" class="text-sm text-slate-600">Check off milestones as you learn to update your mastery percentage.</p>
+            </div>
+            <span id="roadmap-completion-pill" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">40% Done</span>
+          </div>
+
+          <div class="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
+            <div id="roadmap-progress-bar" class="h-full bg-gradient-to-r from-indigo-600 to-violet-600 transition-all duration-300" style="width: 40%;"></div>
+          </div>
+
+          <div id="roadmap-steps-list" class="space-y-3 pt-2"></div>
+        </div>
+
+        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-5">
+          <div>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+              Consistency & Milestones
+            </span>
+            <h2 class="text-xl font-bold text-slate-900 mt-1.5">Learning Streak & Check-In</h2>
+            <p class="text-sm text-slate-600">Complete a daily study check-in to extend your streak and earn Learning Wallet rewards.</p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-amber-800">Active Streak</p>
+              <p id="streak-big-number" class="text-3xl font-extrabold text-amber-950 mt-0.5">12 Days</p>
+              <p id="streak-next-reward" class="text-xs text-amber-800 mt-1">+₹50 Wallet bonus at 14-day streak</p>
+            </div>
+            <button onclick="logDailyCheckIn()" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-semibold shadow-xs transition">
+              🔥 Log Check-In
+            </button>
+          </div>
+
+          <div id="streak-week-grid" class="grid grid-cols-7 gap-1.5 text-center"></div>
+
+          <div class="pt-3 border-t border-slate-100 space-y-3">
+            <h3 class="text-sm font-bold text-slate-900">Portfolio Projects Completed</h3>
+            <div id="projects-checklist" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: OFFLINE LEARNING, PEER LEARNING & SKILL EXCHANGE -->
+    <section id="tab-community" class="tab-panel hidden space-y-6 animate-fade-up">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
+          <div>
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Verified Local Hubs
+            </span>
+            <h2 class="text-xl font-bold text-slate-900 mt-1.5">Approved Offline Workshops & Meetups</h2>
+            <p class="text-sm text-slate-600">Reserve a spot at vetted in-person study clinics and city workshops.</p>
+          </div>
+        </div>
+        <div id="offline-workshops-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200">Study Pods</span>
+              <h3 class="text-lg font-bold text-slate-900 mt-1.5">Peer Learning Groups</h3>
+              <p class="text-xs sm:text-sm text-slate-600">Join fellow learners to practice problems and stay accountable together.</p>
+            </div>
+          </div>
+          <div id="peer-pods-list" class="space-y-3"></div>
+        </div>
+
+        <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+          <div>
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-50 text-violet-700 border border-violet-200">Zero-Cash Knowledge Swap</span>
+            <h3 class="text-lg font-bold text-slate-900 mt-1.5">Skill Exchange Board</h3>
+            <p class="text-xs sm:text-sm text-slate-600">Offer a skill you know in exchange for a skill you want to learn.</p>
+          </div>
+
+          <form onsubmit="postSkillExchange(event)" class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">I Can Teach</label>
+              <input id="swap-offer-input" type="text" required placeholder="e.g., SQL & Excel" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-600 mb-1">I Want to Learn</label>
+              <input id="swap-want-input" type="text" required placeholder="e.g., React Hooks" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div class="sm:col-span-2 flex justify-end">
+              <button type="submit" class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs sm:text-sm font-semibold transition">
+                + Post Skill Swap
+              </button>
+            </div>
+          </form>
+
+          <div id="skill-exchange-list" class="space-y-3 max-h-[340px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Slide-Over AI Study Assistant Drawer -->
+  <div id="assistant-backdrop" onclick="toggleAssistantDrawer(false)" class="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-2xs hidden transition-opacity"></div>
+  <aside id="assistant-drawer" class="fixed top-0 right-0 z-50 h-full w-full max-w-md bg-white shadow-2xl border-l border-slate-200 transform translate-x-full transition-transform duration-300 flex flex-col">
+    <div class="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-indigo-600 to-violet-600 text-white">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-lg">✨</span>
+          <h2 class="font-bold text-base sm:text-lg">AI Study Assistant</h2>
+        </div>
+        <p class="text-xs text-indigo-100 mt-0.5">Explain concepts or generate practice questions</p>
+      </div>
+      <button onclick="toggleAssistantDrawer(false)" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center text-white font-bold">✕</button>
+    </div>
+
+    <div class="p-4 space-y-3 border-b border-slate-100 bg-slate-50">
+      <label for="ai-topic-input" class="block text-xs font-semibold text-slate-700">Topic or Concept</label>
+      <input id="ai-topic-input" type="text" value="RAG & Vector Embeddings" placeholder="Enter any topic (e.g., SQL Joins, Closures, RAG)" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="runAiExplain()" class="py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold transition">
+          💡 Explain Concept
+        </button>
+        <button onclick="runAiPracticeQuiz()" class="py-2 px-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs sm:text-sm font-semibold transition">
+          📝 Practice Questions
+        </button>
+      </div>
+    </div>
+
+    <div id="ai-assistant-messages" class="flex-1 overflow-y-auto p-4 space-y-3.5 text-sm"></div>
+  </aside>
+
+  <!-- Learning Wallet Modal -->
+  <div id="wallet-modal-backdrop" onclick="closeWalletModal()" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-2xs hidden items-center justify-center p-4">
+    <div onclick="event.stopPropagation()" class="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden animate-fade-up">
+      <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Payments • Refunds • Rewards</span>
+          <h2 class="text-lg font-bold text-slate-900 mt-1">Learning Wallet</h2>
+        </div>
+        <button onclick="closeWalletModal()" class="w-8 h-8 rounded-lg bg-slate-200/70 hover:bg-slate-300/70 flex items-center justify-center text-slate-700 font-bold">✕</button>
+      </div>
+
+      <div class="p-5 space-y-5 max-h-[80vh] overflow-y-auto">
+        <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p class="text-xs text-emerald-100 font-medium">Available Wallet Balance</p>
+            <p id="modal-wallet-balance" class="text-3xl font-extrabold mt-0.5">₹1,450</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="topUpWallet(200)" class="px-3.5 py-2 rounded-xl bg-white text-emerald-800 hover:bg-emerald-50 text-xs font-bold shadow-xs transition">
+              + Add ₹200
+            </button>
+            <button onclick="downloadRewardZip()" class="px-3.5 py-2 rounded-xl bg-amber-300 text-slate-950 hover:bg-amber-200 text-xs font-bold shadow-xs transition">
+              📦 Reward ZIP
+            </button>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-between gap-3">
+          <div class="text-xs text-amber-950">
+            <p class="font-bold">Reward ZIP Pack Available</p>
+            <p class="text-amber-800 mt-0.5">Download a ZIP bundle with your study roadmap, notes, and practice sheet.</p>
+          </div>
+          <button onclick="downloadRewardZip()" class="shrink-0 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold">
+            Download ZIP
+          </button>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">Recent Transactions & Refunds</h3>
+          <div id="wallet-transactions-list" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modular JavaScript Files -->
+  <script src="js/data.js"></script>
+  <script src="js/zip-builder.js"></script>
+  <script src="js/skillgap.js"></script>
+  <script src="js/marketplace.js"></script>
+  <script src="js/community.js"></script>
+  <script src="js/assistant.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
